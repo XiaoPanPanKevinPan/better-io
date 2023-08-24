@@ -1,0 +1,24 @@
+{
+  "name": "better-io",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XiaoPanPanKevinPan/better-io.git"
+  },
+  "keywords": [
+    "io",
+    "scanf",
+    "c-like"
+  ],
+  "author": "XiaoPanPanKevinPan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/XiaoPanPanKevinPan/better-io/issues"
+  },
+  "homepage": "https://github.com/XiaoPanPanKevinPan/better-io#readme"
+}
