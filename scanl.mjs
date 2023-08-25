@@ -103,8 +103,7 @@ class LineScanner extends EventEmitter {
 	}
 
 	shorthand () {
-		const thisLineScanner = this;
-		const result = {};
+		const result = { lineScanner: this };
 		["isClosed", "getLine", "scan", "scanf"].forEach(x => {
 			result[x] = (...val) => this[x](...val);
 		})
