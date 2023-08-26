@@ -1,6 +1,6 @@
 {
   "name": "@xppkp/boost",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "This project aims to boost the coding speed in NodeJS. It's developed for competitive programming and is still under development.",
   "main": "index.mjs",
   "scripts": {
