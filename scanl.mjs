@@ -5,8 +5,8 @@ import { EventEmitter } from "node:events";
 
 const EOL = Symbol.for("EOL");
 
-const sscan = line => line.split(/ +/);
-const sscanf = (line, format, { allowLengthUnmet = false, extendedSpec = {} } = {}) => {
+const sscan = (line, splitter = /[ \r\n]+/) => line.split(splitter).filter(x => x);
+const sscanf = (line, format, { allowLengthUnmet = false, extendedSpec = {}, splitter } = {}) => {
 	const table = {
 		"%s": str => str,
 		"%d": str => parseInt(str),
@@ -16,7 +16,7 @@ const sscanf = (line, format, { allowLengthUnmet = false, extendedSpec = {} } = 
 		...extendedSpec
 	};
 
-	const substrs = sscan(line);
+	const substrs = sscan(line, splitter);
 	const specs = format.split(/[ \r\n]+|(?=%)/);
 	if(!allowLengthUnmet && substrs.length != specs.length)
 		throw "Lengthes unmet!";
@@ -52,30 +52,47 @@ class LineScanner extends EventEmitter {
 			this.emit("lineReady");
 		});
 
-		rl.on("close", () => {
+		rl.once("close", () => {
 			this.#closed = true;
 			this.emit("close");
-		})
-	}
+		});
 
-	#closed = false;
-	get closed() { return this.#closed };
-	isClosed() { return this.#closed };
+		if(rl.closed) {
+			this.#closed = true;
+			this.emit("close");
+		}
+
+		// "close" event doesn't mean the #unprocessedLines is empty
+	}
 
 	readline = null; // inited and made constant in constructor
 
+	close() { 
+		this.readline.close();
+	}
+
+	#closed = false;
+
 	#unprocessedLines = [];
-	get unprocessedLines() { return this.#unprocessedLines; }
+	isEmpty() {
+		return this.#unprocessedLines.length == 0
+	}
+
+	isEof() {
+		return this.#closed && this.isEmpty();
+	}
 
 	async getLine() {
 		if(this.#unprocessedLines.length > 0)
 			return (this.#unprocessedLines).shift();
-		if(this.closed) 
+		if(this.#closed) 
 			return EOF;
 		return new Promise(res => {
 			const lineReadyCb = () => {
 				clearListeners();
-				res(this.#unprocessedLines.shift());
+				res(this.#unprocessedLines.shift() ?? this.getLine());
+					// If there are two getLine() waiting, one can consume a line, but the other will get undefined.
+					// This automatically makes it wait for another line.
 			}
 			const closeCb = () => {
 				clearListeners();
@@ -90,10 +107,10 @@ class LineScanner extends EventEmitter {
 		});
 	};
 
-	async scan() {
+	async scan(splitter) {
 		const line = await this.getLine();
 		if(line == EOF) return [ EOF ];
-		return sscan(line);
+		return sscan(line, splitter);
 	};
 
 	async scanf(format, options) {
@@ -102,11 +119,14 @@ class LineScanner extends EventEmitter {
 		return sscanf(line, format, options);
 	}
 
-	shorthand () {
+	shorthand (obj) {
 		const result = { lineScanner: this };
-		["isClosed", "getLine", "scan", "scanf"].forEach(x => {
-			result[x] = (...val) => this[x](...val);
-		})
+		["getLine", "scan", "scanf", "close", "isEmpty", "isEof"].forEach(x => {
+			// result[x] = (...val) => this[x](...val);
+			result[x] = this[x].bind(this)
+		});
+		if(obj instanceof Object) 
+			Object.assign(obj, result);
 		return result;
 	}
 }
